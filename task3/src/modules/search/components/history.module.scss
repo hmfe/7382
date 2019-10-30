@@ -1,0 +1,67 @@
+@import 'styles/variables.raw.scss';
+@import 'styles/mixins.raw.scss';
+
+.history {
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+    }
+
+    &__clear {
+        @include font-smaller();
+    }
+}
+
+.history-list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+
+    &__item {
+        position: relative;
+        border-top: 1px solid $color-border;
+        min-height: $control-size;
+        padding: 5px $control-size 5px 0;
+        display: flex;
+
+        @include respond('mobile-all') {
+            flex-wrap: wrap;
+        }
+
+        &:first-child {
+            border-top: none;
+        }
+    }
+
+    &__value {
+        word-break: break-word;
+        margin-right: auto;
+        padding-right: 20px;
+
+        @include respond('mobile-ver') {
+            flex: 0 1 100%;
+            padding-right: 5px;
+        }
+    }
+
+    &__time {
+        @include font-smaller();
+        color: $color-text-secondary;
+        margin: 1px 20px 0 0;
+        white-space: nowrap;
+    }
+
+    &__remove {
+        @include icon-button();
+        color: $color-text-secondary;
+        position: absolute;
+        right: 0;
+        top: 0;
+
+        &::before {
+            content: '\2715';
+            padding-bottom: 1px;
+        }
+    }
+}

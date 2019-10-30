@@ -1,0 +1,115 @@
+@import 'styles/variables.raw.scss';
+
+// Not a mixin, but let it be here.
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+        transform-origin: center;
+    }
+}
+
+@mixin font-smaller() {
+    font-size: 0.866667rem; // depends on parent font-size
+}
+
+@mixin icon-button() {
+    width: $control-size;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 0;
+    background: none;
+    border: none;
+
+    &::before {
+        display: inline-block;
+        width: $control-size;
+    }
+}
+
+// Here comes the responsive magic.
+@mixin respond($val) {
+    $dx: 1280px; // min big desktop
+    $d: 1200px; // min desktop
+    $th: 992px; // min talbet horizontal
+    $tv: 768px; // min tablet vertical
+    $mh: 640px; // min mobile horizontal
+    $mv: 320px; // min mobile vertical
+
+    // 0 – mobile vertical
+    @if $val == 's' {
+        @media (max-width: ($mh - 1)) {
+            @content;
+        }
+    }
+
+    // Mobile horizontal – tablet vertical
+    @if $val == 'm' {
+        @media (min-width: $mh) and (max-width: ($th - 1)) {
+            @content;
+        }
+    }
+
+    // Tablet horizontal plus
+    @if $val == 'l' {
+        @media (min-width: ($th)) {
+            @content;
+        }
+    }
+
+    // Mobile
+    @if $val == 'mobile-all' {
+        @media (max-width: ($tv - 1)) {
+            @content;
+        }
+    }
+
+    @if $val == 'mobile-ver' {
+        @media (max-width: ($mh - 1)) {
+            @content;
+        }
+    }
+
+    @if $val == 'mobile-hor' {
+        @media (min-width: $mh) and (max-width: ($tv - 1)) {
+            @content;
+        }
+    }
+
+    // Tablet
+    @if $val == 'tablet-all' {
+        @media (min-width: $tv) and (max-width: ($d - 1)) {
+            @content;
+        }
+    }
+
+    @if $val == 'tablet-ver' {
+        @media (min-width: $tv) and (max-width: ($th - 1)) {
+            @content;
+        }
+    }
+
+    @if $val == 'tablet-hor' {
+        @media (min-width: $th) and (max-width: ($d - 1)) {
+            @content;
+        }
+    }
+
+    @if $val == 'tablet-plus' {
+        @media (min-width: $tv) {
+            @content;
+        }
+    }
+
+    // Desktop
+    @if $val == 'desktop-plus' {
+        @media (min-width: ($d)) {
+            @content;
+        }
+    }
+
+    @if $val == 'desktop-big' {
+        @media (min-width: ($dx)) {
+            @content;
+        }
+    }
+}
