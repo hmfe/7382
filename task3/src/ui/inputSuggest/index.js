@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { unstable_batchedUpdates } from 'react-dom';
 import PropTypes from 'prop-types';
 import cn from 'classnames';
 
@@ -26,10 +27,8 @@ const InputSuggest = props => {
     const suggestItemsLength = !!suggestItems ? suggestItems.length : 0;
     const hasSuggest = suggestItemsLength > 0;
     const [isSuggestVisible, toggleSuggest] = useState(hasSuggest);
-    const [currentFocusedItemNode, setCurrentFocusedItemNode] = useState(null);
-    const currentFocusedItemId = currentFocusedItemNode
-        ? currentFocusedItemNode.getAttribute('id')
-        : null;
+    const [currentFocusedItemId, setCurrentFocusedItemId] = useState(null);
+    const currentFocusedItem = useRef();
     const isSuggestExpanded = hasSuggest && isSuggestVisible && !disabled;
     const onKeyUp = e => {
         // Hides suggest on Esc button click.
@@ -50,7 +49,8 @@ const InputSuggest = props => {
         e.stopPropagation();
 
         // For input's aria-activedescendant
-        setCurrentFocusedItemNode(null);
+        currentFocusedItem.current = null;
+        setCurrentFocusedItemId(null);
     };
     const onInputKeyDown = e => {
         if (typeof rest.onInputKeyDown === 'function') rest.onInputKeyDown();
@@ -66,18 +66,22 @@ const InputSuggest = props => {
 
             switch (e.keyCode) {
                 case 13:
-                    if (currentFocusedItemNode) {
-                        onSuggestSelect(e, currentFocusedItemNode.textContent);
+                    if (currentFocusedItem.current) {
+                        onSuggestSelect(
+                            e,
+                            currentFocusedItem.current.textContent
+                        );
                     } else {
                         onSuggestSelect(e, value);
                     }
                     return;
                 case 38: {
-                    if (!currentFocusedItemId) {
+                    if (!currentFocusedItem.current) {
                         nextActiveItem =
                             suggestItemsNodes[suggestItemsLength - 1];
-                    } else if (currentFocusedItemNode.previousSibling) {
-                        nextActiveItem = currentFocusedItemNode.previousSibling;
+                    } else if (currentFocusedItem.current.previousSibling) {
+                        nextActiveItem =
+                            currentFocusedItem.current.previousSibling;
                     } else if (suggestItemsLength > 1) {
                         nextActiveItem =
                             suggestItemsNodes[suggestItemsLength - 1];
@@ -85,10 +89,10 @@ const InputSuggest = props => {
                     break;
                 }
                 case 40: {
-                    if (!currentFocusedItemId) {
+                    if (!currentFocusedItem.current) {
                         nextActiveItem = suggestItemsNodes[0];
-                    } else if (currentFocusedItemNode.nextSibling) {
-                        nextActiveItem = currentFocusedItemNode.nextSibling;
+                    } else if (currentFocusedItem.current.nextSibling) {
+                        nextActiveItem = currentFocusedItem.current.nextSibling;
                     } else if (suggestItemsLength > 1) {
                         nextActiveItem = suggestItemsNodes[0];
                     }
@@ -115,7 +119,8 @@ const InputSuggest = props => {
                     suggestRef.current.scrollTop = nextActiveItemOffsetTop;
                 }
 
-                setCurrentFocusedItemNode(nextActiveItem);
+                currentFocusedItem.current = nextActiveItem;
+                setCurrentFocusedItemId(nextActiveItem.getAttribute('id'));
             }
         }
     };
@@ -123,12 +128,16 @@ const InputSuggest = props => {
         // Needed for hiding suggest on outside focus.
         e.stopPropagation();
 
-        setCurrentFocusedItemNode(e.target);
+        currentFocusedItem.current = e.target;
+        setCurrentFocusedItemId(e.target.getAttribute('id'));
     };
 
     useEffect(() => {
         // Updates suggest visibility only if input is focused.
-        if (!isSuggestExpanded) setCurrentFocusedItemNode(null);
+        if (!isSuggestExpanded) {
+            currentFocusedItem.current = null;
+            setCurrentFocusedItemId(null);
+        }
     }, [isSuggestExpanded]);
 
     useEffect(() => {
@@ -141,9 +150,13 @@ const InputSuggest = props => {
     useEffect(() => {
         // Hides suggest on ouside click and focus.
         function hideSuggest(e) {
-            // Sync code state updates are batched before rerender.
-            toggleSuggest(false);
-            setCurrentFocusedItemNode(null);
+            // Sync code state updates from within React event handler are batched before rerender,
+            // but here unstable_batchedUpdates is required.
+            unstable_batchedUpdates(() => {
+                toggleSuggest(false);
+                setCurrentFocusedItemId(null);
+                currentFocusedItem.current = null;
+            });
 
             if (typeof onSuggestHide === 'function') onSuggestHide();
         }
@@ -162,7 +175,7 @@ const InputSuggest = props => {
             window.removeEventListener('click', hideSuggest);
             window.removeEventListener('focusin', hideSuggest);
         };
-    });
+    }, [inputRef, onSuggestHide, suggestRef]);
 
     return (
         <div className={cn(className, styles.input)} onKeyUp={onKeyUp}>
